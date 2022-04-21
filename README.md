@@ -16,3 +16,21 @@ use in any other controller
             $index = $this->paginateIndex($request, new Model(), ['relations'], true);
             return Response()->json($index);
 ```
+
+### URl params:
+
+```
+? page = 1
+& lazyEvent = {
+   "first":0,
+   "rows":10,
+   "sortField":"order",
+   "sortOrder":1,
+   "filters":{
+      "global":{
+         "value":null,
+         "matchMode":"contains"
+      }
+   }
+}
+```
