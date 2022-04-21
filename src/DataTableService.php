@@ -1,6 +1,10 @@
 <?php 
 
+<<<<<<< HEAD
 namespace Netvibes\Datatablehandler;
+=======
+namespace src;
+>>>>>>> 57f3ee96d22bd4128b895c21f99983631a6c1565
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
