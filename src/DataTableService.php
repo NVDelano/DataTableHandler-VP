@@ -1,6 +1,7 @@
 <?php 
 
-namespace Services;
+namespace src;
+
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Providers;
+namespace Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class DataTableProvider extends ServiceProvider
 {
     /**
      * Register any application services.
