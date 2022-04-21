@@ -17,7 +17,7 @@ use in any other controller
             return Response()->json($index);
 ```
 
-### URl params:
+### URL params:
 
 ```
 ? page = 1
