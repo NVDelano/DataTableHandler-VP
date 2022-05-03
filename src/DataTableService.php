@@ -53,9 +53,9 @@ class DataTableService {
                     $previousRelation = $relationNamePlural;
                 }
                 // select the base table and include the filter column that we joined
-                $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn);
+                $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn . ' as joined_' . $filterColumn);
                 // relation filter
-                $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
+                $indexQuery = $indexQuery->orderBy('joined_' . $filterColumn, $sortOrder);
             } else {
                 // normal filter
                 $indexQuery = $indexQuery->orderBy($lazyEvent->sortField, $sortOrder);
