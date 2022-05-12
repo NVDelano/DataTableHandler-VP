@@ -35,16 +35,13 @@ class DataTableService {
 
         // Sorting
         if (isset($lazyEvent->sortField) && $lazyEvent->sortField) {
+            $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
+            // Sort on multiple fields
             if (is_array($lazyEvent->sortField)) {
                 foreach ($lazyEvent->sortField as $sortField) {
                     $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
                 }
-                // select the base table and include the filter column that we joined
-                $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn . ' as joined_' . $filterColumn);
-                // relation filter
-                $indexQuery = $indexQuery->orderBy('joined_' . $filterColumn, $sortOrder);
             } else {
-                $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
                 $sortRelation = explode('.', $lazyEvent->sortField);
                 $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
                 if (sizeof($sortRelation) >= 1) {
