@@ -39,6 +39,10 @@ class DataTableService {
                 foreach ($lazyEvent->sortField as $sortField) {
                     $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
                 }
+                // select the base table and include the filter column that we joined
+                $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn . ' as joined_' . $filterColumn);
+                // relation filter
+                $indexQuery = $indexQuery->orderBy('joined_' . $filterColumn, $sortOrder);
             } else {
                 $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
                 $sortRelation = explode('.', $lazyEvent->sortField);
