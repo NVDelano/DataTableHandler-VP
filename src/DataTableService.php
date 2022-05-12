@@ -35,31 +35,38 @@ class DataTableService {
 
         // Sorting
         if (isset($lazyEvent->sortField) && $lazyEvent->sortField) {
-            $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
-            $sortRelation = explode('.', $lazyEvent->sortField);
-            $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
-            if (sizeof($sortRelation) >= 1) {
-                $baseTable = $indexQuery->first()->getTable();
-                // Joining the relations so we can filter on the end column
-                    foreach ($sortRelation as $index => $relationName) {
-                    if($index == 0) {
-                        $previousRelation = $baseTable;
-                    }
-                    $relationNamePlural = Str::of($relationName)->plural()->snake();
-                    if ($relationName === $relationNamePlural) {
-                        break; // can't filter on Many-to-Many
-                    }
-                    $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$relationName.'_id');
-                    $previousRelation = $relationNamePlural;
+            if (is_array($lazyEvent->sortField)) {
+                foreach ($lazyEvent->sortField as $sortField) {
+                    $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
                 }
-                // select the base table and include the filter column that we joined
-                $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn);
-                // relation filter
-                $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
             } else {
-                // normal filter
-                $indexQuery = $indexQuery->orderBy($lazyEvent->sortField, $sortOrder);
+                $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
+                $sortRelation = explode('.', $lazyEvent->sortField);
+                $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
+                if (sizeof($sortRelation) >= 1) {
+                    $baseTable = $indexQuery->first()->getTable();
+                    // Joining the relations so we can filter on the end column
+                        foreach ($sortRelation as $index => $relationName) {
+                        if($index == 0) {
+                            $previousRelation = $baseTable;
+                        }
+                        $relationNamePlural = Str::of($relationName)->plural()->snake();
+                        if ($relationName === $relationNamePlural) {
+                            break; // can't filter on Many-to-Many
+                        }
+                        $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$relationName.'_id');
+                        $previousRelation = $relationNamePlural;
+                    }
+                    // select the base table and include the filter column that we joined
+                    $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn);
+                    // relation filter
+                    $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
+                } else {
+                    // normal filter
+                    $indexQuery = $indexQuery->orderBy($lazyEvent->sortField, $sortOrder);
+                }
             }
+            
         } else {
             // default filter
             $indexQuery =  $indexQuery->orderBy('created_at', 'desc');
