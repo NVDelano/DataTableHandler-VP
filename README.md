@@ -32,7 +32,6 @@ use in any other controller
 
 In case of more complex queries
 
-use in any other controller
 ```
     $arrayResponse = $this->paginateIndex($request, new Model(), ['relations'], false);
     
