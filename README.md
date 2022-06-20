@@ -26,8 +26,24 @@ Sorting is not possible on many-to-many or one-to-many relations
 ## Usage
 use in any other controller
 ```
-    $index = $this->paginateIndex($request, new Model(), ['relations'], true);
-    return Response()->json($index);
+    $paginatedResponse = $this->paginateIndex($request, new Model(), ['relations'], true);
+    return Response()->json($paginatedResponse);
+```
+
+In case of more complex queries
+
+use in any other controller
+```
+    $arrayResponse = $this->paginateIndex($request, new Model(), ['relations'], false);
+    
+    $indexQuery = $arrayResponse['query'];
+    
+    // Perform extra queries here
+    $indexQuery = $indexQuery->where('column', false);
+    $indexQuery = $indexQuery->where('column2', 'parameter');
+    
+    // query needs to be paginated
+    return Response()->json($indexQuery->paginate($arrayResponse['pages']));
 ```
 
 ### URL params:
