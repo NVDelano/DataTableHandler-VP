@@ -18,7 +18,7 @@ class DataTableService {
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
-                    if ($key == "global"){
+                    if ($key == "global") {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
@@ -72,6 +72,11 @@ class DataTableService {
             // default filter
             $indexQuery =  $indexQuery->orderBy('created_at', 'desc');
         }
+        
+        // Select specific fields
+        if (isset($lazyEvent->selectFields) && $lazyEvent->selectFields && is_array($lazyEvent->selectFields)) {
+            $indexQuery =  self::setupSelect($indexQuery, $lazyEvent->selectFields, $withColumns);
+        }
 
         // Pagination
         $paginateRows = isset($lazyEvent->rows) ? $lazyEvent->rows : 30;
@@ -106,4 +111,54 @@ class DataTableService {
 
         return $indexQuery;
     }
+
+    static public function setupSelect($indexQuery, $selectArray, $withColumns, $relation = null) {
+        $relationArray = [];
+        if($relation != null){
+            $relationArray[$relation] = [];
+        }
+
+        foreach ($selectArray as $key => $select) {
+            // dissalow fetching all
+            if (is_string($select) && str_contains($select, '*')) {
+                continue;
+            }
+            
+            // If in array/object call setup with relation
+            if(!is_string($select)) {
+                $tempSelect = (Array) $select;
+                $tempKey = array_key_first($tempSelect);
+                $tempSelect = $tempSelect[$tempKey];
+            
+                $relationString = $relation != null ? $relation . '.' . $tempKey : $tempKey;
+                $indexQuery = self::setupSelect($indexQuery, $tempSelect, $withColumns, $relationString);
+            
+                continue;
+            }
+
+            // If relation string exists
+            if($relation != null){
+                // If with is not allowed - skip
+                if(!in_array($relation, $withColumns)){
+                    continue;
+                }
+
+                // Fill the array for with's - select should be done in one with
+                $relationArray[$relation][] = $select;
+            } else {
+                // Add normal select
+                $indexQuery = $indexQuery->addSelect($select);
+            }
+        }
+
+        // Loop throught the with's array to add the select
+        foreach ($relationArray as $key => $relation) {
+            $indexQuery = $indexQuery->with([$key => function($q) use ($relation){
+                $q->addSelect($relation);
+            }]);
+        }
+
+        return $indexQuery;
+    }
+
 }
