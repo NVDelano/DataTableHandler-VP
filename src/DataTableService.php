@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class DataTableService {
+    static $baseTable;
+    static $additionalSelect;
+
     static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated)
     {
         // Setup
@@ -33,6 +36,16 @@ class DataTableService {
             $indexQuery = $indexQuery->with($withColumns);
         }
 
+        self::$baseTable = $indexQuery->first()->getTable();
+
+        
+        // Select specific fields
+        $selectingFields = false;
+        if (isset($lazyEvent->selectFields) && $lazyEvent->selectFields && is_array($lazyEvent->selectFields)) {
+            $indexQuery =  self::setupSelect($indexQuery, $lazyEvent->selectFields, $withColumns);
+            $selectingFields = true;
+        }
+
         // Sorting
         if (isset($lazyEvent->sortField) && $lazyEvent->sortField) {
             $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
@@ -45,11 +58,10 @@ class DataTableService {
                 $sortRelation = explode('.', $lazyEvent->sortField);
                 $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
                 if (sizeof($sortRelation) >= 1) {
-                    $baseTable = $indexQuery->first()->getTable();
                     // Joining the relations so we can filter on the end column
                         foreach ($sortRelation as $index => $relationName) {
                         if($index == 0) {
-                            $previousRelation = $baseTable;
+                            $previousRelation = self::$baseTable;
                         }
                         $relationNamePlural = Str::of($relationName)->plural()->snake();
                         if ($relationName === $relationNamePlural) {
@@ -59,7 +71,10 @@ class DataTableService {
                         $previousRelation = $relationNamePlural;
                     }
                     // select the base table and include the filter column that we joined
-                    $indexQuery = $indexQuery->select($baseTable.'.*',$previousRelation.'.'.$filterColumn);
+                    self::$additionalSelect = $previousRelation.'.'.$filterColumn;
+                    if (!$selectingFields) {
+                        $indexQuery = $indexQuery->select(self::$baseTable.'.*',$previousRelation.'.'.$filterColumn);
+                    }
                     // relation filter
                     $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
                 } else {
@@ -73,10 +88,6 @@ class DataTableService {
             $indexQuery =  $indexQuery->orderBy('created_at', 'desc');
         }
         
-        // Select specific fields
-        if (isset($lazyEvent->selectFields) && $lazyEvent->selectFields && is_array($lazyEvent->selectFields)) {
-            $indexQuery =  self::setupSelect($indexQuery, $lazyEvent->selectFields, $withColumns);
-        }
 
         // Pagination
         $paginateRows = isset($lazyEvent->rows) ? $lazyEvent->rows : 30;
@@ -147,8 +158,12 @@ class DataTableService {
                 $relationArray[$relation][] = $select;
             } else {
                 // Add normal select
-                $indexQuery = $indexQuery->addSelect($select);
+                $indexQuery = $indexQuery->addSelect(self::$baseTable . '.' . $select);
             }
+        }
+        
+        if(self::$additionalSelect){
+            $indexQuery = $indexQuery->addSelect(self::$additionalSelect);
         }
 
         // Loop throught the with's array to add the select
