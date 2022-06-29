@@ -36,8 +36,7 @@ class DataTableService {
             $indexQuery = $indexQuery->with($withColumns);
         }
 
-        self::$baseTable = $indexQuery->first()->getTable();
-
+        self::$baseTable = $indexQuery->getModel()->getTable();
         
         // Select specific fields
         $selectingFields = false;
