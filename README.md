@@ -1,6 +1,10 @@
 # DataTableHandler-VP
 
 ## Installation
+Run
+```composer create-project netvibes/datatablehandler```
+
+
 Add to controller.php 
 ```
     public function paginateIndex($request, $indexQuery, $withColumns = [], $returnPaginated = true)
