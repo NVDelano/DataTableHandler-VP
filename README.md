@@ -2,7 +2,7 @@
 
 ## Installation
 Run
-```composer create-project netvibes/datatablehandler```
+```composer require netvibes/datatablehandler```
 
 
 Add to controller.php 
