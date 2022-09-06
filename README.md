@@ -1,8 +1,15 @@
 # DataTableHandler-VP
 
 ## Installation
+Run
+```composer require netvibes/datatablehandler```
+
+
 Add to controller.php 
 ```
+    use Netvibes\Datatablehandler\DataTableService;
+
+
     public function paginateIndex($request, $indexQuery, $withColumns = [], $returnPaginated = true)
     {
         $processedDataTable = DataTableService::process($request->query('lazyEvent'), $indexQuery, $withColumns, $returnPaginated);
