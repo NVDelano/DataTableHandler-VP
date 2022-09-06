@@ -25,7 +25,7 @@ class DataTableService {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
-                        $indexQuery = $indexQuery->where($key, 'ILIKE', "%{$filter->value}%");
+                        $indexQuery = $indexQuery->where($key, 'regexp', "/\b($filter->value)[\w|\b]/gmi");
                     }
                 }
             }
@@ -110,10 +110,10 @@ class DataTableService {
                 $indexQuery = self::setupWhere($indexQuery, $column, $filterValue, array_merge($relationName, [$columnKey]));
             } else {
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%{$filterValue}%");
+                    $indexQuery = $indexQuery->orWhere($column, 'regexp', "/\b($filterValue)[\w|\b]/gmi");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        $q->where($column, 'ILIKE', "%{$filterValue}%");
+                        $q->where($column, 'regexp', "/\b($filterValue)[\w|\b]/gmi");
                     });
                 }
             }
