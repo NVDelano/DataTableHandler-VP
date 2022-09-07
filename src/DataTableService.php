@@ -25,7 +25,7 @@ class DataTableService {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
-                        $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filter->value%");
+                        $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
                     }
                 }
             }
@@ -113,10 +113,10 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%$filterValue%");
+                    $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        $q->where($column, 'ILIKE', "%$filterValue%");
+                        $q->where($column, '~*', "\m$filterValue");
                     });
                 }
             }
