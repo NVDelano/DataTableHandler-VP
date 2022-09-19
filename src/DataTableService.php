@@ -25,7 +25,7 @@ class DataTableService {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
-                        if (isset(self::$searchType) && self::$searchType == 'regex') {
+                        if (self::$searchType == 'regex') {
                             $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
                         } else {
                             $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filter->value%");
@@ -120,14 +120,14 @@ class DataTableService {
                 }
                 if ($relationName === []) {
                     
-                    if (isset(self::$searchType) && self::$searchType == 'regex') {
+                    if (self::$searchType == 'regex') {
                         $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
                     } else {
                         $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%$filterValue%");
                     }
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        if (isset(self::$searchType) && self::$searchType == 'regex') {
+                        if (self::$searchType == 'regex') {
                             $q->where($column, '~*', "\m$filterValue");
                         } else {
                             $q->where($column, 'ILIKE', "%$filterValue%");
