@@ -25,7 +25,11 @@ class DataTableService {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
-                        $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
+                        if ($lazyEvent->searchType = 'regex') {
+                            $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
+                        } else {
+                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filter->value%");
+                        }
                     }
                 }
             }
@@ -48,40 +52,7 @@ class DataTableService {
         // Sorting
         if (isset($lazyEvent->sortField) && $lazyEvent->sortField) {
             $sortOrder = $lazyEvent->sortOrder === 1 ? 'asc' : 'desc';
-            // Sort on multiple fields
-            if (is_array($lazyEvent->sortField)) {
-                foreach ($lazyEvent->sortField as $sortField) {
-                    $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
-                }
-            } else {
-                $sortRelation = explode('.', $lazyEvent->sortField);
-                $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
-                if (sizeof($sortRelation) >= 1) {
-                    // Joining the relations so we can filter on the end column
-                        foreach ($sortRelation as $index => $relationName) {
-                        if($index == 0) {
-                            $previousRelation = self::$baseTable;
-                        }
-                        $relationNamePlural = Str::of($relationName)->plural()->snake();
-                        if ($relationName === $relationNamePlural) {
-                            break; // can't filter on Many-to-Many
-                        }
-                        $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$relationName.'_id');
-                        $previousRelation = $relationNamePlural;
-                    }
-                    // select the base table and include the filter column that we joined
-                    self::$additionalSelect = $previousRelation.'.'.$filterColumn;
-                    if (!$selectingFields) {
-                        $indexQuery = $indexQuery->select(self::$baseTable.'.*',$previousRelation.'.'.$filterColumn);
-                    }
-                    // relation filter
-                    $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
-                } else {
-                    // normal filter
-                    $indexQuery = $indexQuery->orderBy($lazyEvent->sortField, $sortOrder);
-                }
-            }
-            
+            $indexQuery = self::setupOrder($indexQuery, $lazyEvent->sortField, $sortOrder, $selectingFields);
         } else {
             // default filter
             $indexQuery =  $indexQuery->orderBy('created_at', 'desc');
@@ -103,6 +74,41 @@ class DataTableService {
         // Return paginated results
         return $paginatedIndex;
     }
+    
+    static public function setupOrder($indexQuery, $sortFields, $sortOrder, $selectingFields)
+    {
+        $sortFields = is_array($sortFields) ? $sortFields : [$sortFields];
+        foreach ($sortFields as $sortField) {
+            $sortRelation = explode('.', $sortField);
+            $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
+            if (sizeof($sortRelation) >= 1) {
+                // Joining the relations so we can filter on the end column
+                    foreach ($sortRelation as $index => $relationName) {
+                    if($index == 0) {
+                        $previousRelation = self::$baseTable;
+                    }
+                    $relationNamePlural = Str::of($relationName)->plural()->snake();
+                    if ($relationName === $relationNamePlural) {
+                        break; // can't filter on Many-to-Many
+                    }
+                    $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$relationName.'_id');
+                    $previousRelation = $relationNamePlural;
+                }
+                // select the base table and include the filter column that we joined
+                self::$additionalSelect = $previousRelation.'.'.$filterColumn;
+                if (!$selectingFields) {
+                    $indexQuery = $indexQuery->select(self::$baseTable.'.*',$previousRelation.'.'.$filterColumn);
+                }
+                // relation filter
+                $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
+            } else {
+                // normal filter
+                $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
+            }
+        }
+
+        return $indexQuery;
+    }
 
     static public function setupWhere($indexQuery, $columns, $filterValue, $relationName = []) {
         foreach ($columns as $columnKey => $column) {
@@ -113,10 +119,19 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
+                    
+                    if ($lazyEvent->searchType = 'regex') {
+                        $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
+                    } else {
+                        $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%($filterValue%");
+                    }
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        $q->where($column, '~*', "\m$filterValue");
+                        if ($lazyEvent->searchType = 'regex') {
+                            $q->where($column, '~*', "\m$filterValue");
+                        } else {
+                            $q->where($column, 'ILIKE', "%$filterValue%");
+                        }
                     });
                 }
             }
