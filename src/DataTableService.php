@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class DataTableService {
     static $baseTable;
     static $additionalSelect;
-
+    static $searchType;
     static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated)
     {
         // Setup
@@ -16,8 +16,8 @@ class DataTableService {
         if ($lazyQuery) {
             $lazyEvent = json_decode(urldecode($lazyQuery));
         }
-        
         // Filtering
+        self::$searchType = $lazyEvent->searchType ?? false;
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
@@ -25,7 +25,7 @@ class DataTableService {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
                     } else {
-                        if (isset($lazyEvent->searchType) && $lazyEvent->searchType = 'regex') {
+                        if (isset(self::$searchType) && self::$searchType == 'regex') {
                             $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
                         } else {
                             $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filter->value%");
@@ -120,14 +120,14 @@ class DataTableService {
                 }
                 if ($relationName === []) {
                     
-                    if (isset($lazyEvent->searchType) && $lazyEvent->searchType = 'regex') {
+                    if (isset(self::$searchType) && self::$searchType == 'regex') {
                         $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
                     } else {
-                        $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%($filterValue%");
+                        $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%$filterValue%");
                     }
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        if (isset($lazyEvent->searchType) && $lazyEvent->searchType = 'regex') {
+                        if (isset(self::$searchType) && self::$searchType == 'regex') {
                             $q->where($column, '~*', "\m$filterValue");
                         } else {
                             $q->where($column, 'ILIKE', "%$filterValue%");
