@@ -21,14 +21,16 @@ class DataTableService {
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
+                    $filterValue = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $filter->value);
+
                     if ($key == "global") {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
-                        $indexQuery = self::setupWhere($indexQuery, $columns, $filter->value);
+                        $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
                     } else {
                         if (self::$searchType == 'regex') {
-                            $indexQuery = $indexQuery->where($key, '~*', "\m($filter->value");
+                            $indexQuery = $indexQuery->where($key, '~*', "\m($filterValue");
                         } else {
-                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filter->value%");
+                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filterValue%");
                         }
                     }
                 }
@@ -111,6 +113,7 @@ class DataTableService {
     }
 
     static public function setupWhere($indexQuery, $columns, $filterValue, $relationName = []) {
+        $filterValue = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $filterValue);
         foreach ($columns as $columnKey => $column) {
             if (is_array($column)){
                 $indexQuery = self::setupWhere($indexQuery, $column, $filterValue, array_merge($relationName, [$columnKey]));
