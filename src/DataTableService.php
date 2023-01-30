@@ -21,16 +21,15 @@ class DataTableService {
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
-                    $filterValue = $filter->value;
+                    $filterValue = self::specialCharChanger($filter->value);
                     if ($key == "global") {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
                     } else {
                         if (self::$searchType == 'regex') {
-                            $indexQuery = $indexQuery->where($key, '~*', "\m($filterValue");
+                            $indexQuery = $indexQuery->where($key, '~*', "\m$filterValue");
                         } else {
-                            $filterValue = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $filter->value);
-                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%($filterValue%");
+                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%$filterValue%");
                         }
                     }
                 }
@@ -125,7 +124,6 @@ class DataTableService {
                     if (self::$searchType == 'regex') {
                         $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
                     } else {
-                        $filterValue = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $filterValue);
                         $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%$filterValue%");
                     }
                 } else {
@@ -133,7 +131,6 @@ class DataTableService {
                         if (self::$searchType == 'regex') {
                             $q->where($column, '~*', "\m$filterValue");
                         } else {
-                            $filterValue = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $filterValue);
                             $q->where($column, 'ILIKE', "%$filterValue%");
                         }
                     });
@@ -197,4 +194,18 @@ class DataTableService {
         return $indexQuery;
     }
 
+    static public function specialCharChanger($string) {
+        if (self::$searchType == 'regex') {
+            $string = str_replace(['á','â','à','å','ä','a'], '(á|â|à|å|ä|a)', $string);
+            $string = str_replace(['é','ê','è','ë','e'], '(é|ê|è|ë|e)', $string);
+            $string = str_replace(['í','î','ì','ï','i'], '(í|î|ì|ï|i)', $string);
+            $string = str_replace(['ó','ô','ò','ø','õ','ö','o'], '(ó|ô|ò|ø|õ|ö|o)', $string);
+            $string = str_replace(['ú','û','ù','ü','u'], '(ú|û|ù|ü|u)', $string);
+            $string = str_replace(['ð','æ','ç','ß'], '_', $string);
+        } else {
+            $string = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $string);
+        }
+
+        return $string;
+    }
 }
