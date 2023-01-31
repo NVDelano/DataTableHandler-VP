@@ -76,10 +76,11 @@ class DataTableService {
         return $paginatedIndex;
     }
     
+    // setupSort
     static public function setupOrder($indexQuery, $sortFields, $sortOrder, $selectingFields)
     {
         $sortFields = is_array($sortFields) ? $sortFields : [$sortFields];
-        foreach ($sortFields as $sortField) {
+            foreach ($sortFields as $sortField) {
             $sortRelation = explode('.', $sortField);
             $filterColumn = array_pop($sortRelation); // takes the last off, this is the column
             if (sizeof($sortRelation) >= 1) {
@@ -88,11 +89,14 @@ class DataTableService {
                     if($index == 0) {
                         $previousRelation = self::$baseTable;
                     }
+                    $idName = explode('~', $relationName);
+                    $relationName = $idName[0] ?? $relationName;
                     $relationNamePlural = Str::of($relationName)->plural()->snake();
                     if ($relationName === $relationNamePlural) {
                         break; // can't filter on Many-to-Many
                     }
-                    $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$relationName.'_id');
+                    $idName = $idName[1] ?? $relationName;
+                    $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$idName.'_id');
                     $previousRelation = $relationNamePlural;
                 }
                 // select the base table and include the filter column that we joined
@@ -110,7 +114,6 @@ class DataTableService {
 
         return $indexQuery;
     }
-
     static public function setupWhere($indexQuery, $columns, $filterValue, $relationName = []) {
         foreach ($columns as $columnKey => $column) {
             if (is_array($column)){
