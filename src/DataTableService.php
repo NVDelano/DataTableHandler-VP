@@ -28,7 +28,7 @@ class DataTableService {
                     if ($key == "global") {
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
                     } else {
-                        $indexQuery = $indexQuery->whereRaw("unaccent(".$key.") ilike unaccent('%".$filterValue."%')");
+                        $indexQuery = $indexQuery->whereRaw("unaccent(cast(".$key." as varchar)) ilike unaccent('%".$filterValue."%')");
                     }
                 }
             }
@@ -121,10 +121,10 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->whereRaw("unaccent(".$column.") ilike unaccent('%".$filterValue."%')");
+                    $indexQuery = $indexQuery->whereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        $q->whereRaw("unaccent(".$column.") ilike unaccent('%".$filterValue."%')");
+                        $q->whereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
                     });
                 }
             }
