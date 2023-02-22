@@ -123,7 +123,7 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->whereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
+                    $indexQuery = $indexQuery->orWhereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
                         $q->whereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
