@@ -9,7 +9,7 @@ class DataTableService {
     static $baseTable;
     static $additionalSelect;
     static $searchType;
-    static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated)
+    static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated, $officeCheck = false)
     {
         // Setup
         $lazyEvent = null;
@@ -17,12 +17,15 @@ class DataTableService {
             $lazyEvent = json_decode(urldecode($lazyQuery));
         }
         // Filtering
+        $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
+        if ($officeCheck) {
+            $indexQuery = $indexQuery->where('office_id', \Auth::user()->office_id);
+        }
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
                     $filterValue = $filter->value;
                     if ($key == "global") {
-                        $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
                     } else {
                         $indexQuery = $indexQuery->whereRaw("unaccent(".$key.") ilike unaccent('%".$filterValue."%')");
