@@ -26,7 +26,9 @@ class DataTableService {
                 if ($filter->value) {
                     $filterValue = $filter->value;
                     if ($key == "global") {
-                        $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
+                        $indexQuery = $indexQuery->where(function($query) use ($columns, $filterValue){
+                            $indexQuery = self::setupWhere($query, $columns, $filterValue);
+                        });
                     } else {
                         $indexQuery = $indexQuery->whereRaw("unaccent(cast(".$key." as varchar)) ilike unaccent('%".$filterValue."%')");
                     }
