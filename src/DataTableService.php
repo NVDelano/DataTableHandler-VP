@@ -17,20 +17,15 @@ class DataTableService {
             $lazyEvent = json_decode(urldecode($lazyQuery));
         }
         // Filtering
-        self::$searchType = $lazyEvent->searchType ?? false;
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
-                    $filterValue = self::specialCharChanger($filter->value);
+                    $filterValue = $filter->value;
                     if ($key == "global") {
                         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
                         $indexQuery = self::setupWhere($indexQuery, $columns, $filterValue);
                     } else {
-                        if (self::$searchType == 'regex') {
-                            $indexQuery = $indexQuery->where($key, '~*', "\m$filterValue");
-                        } else {
-                            $indexQuery = $indexQuery->where($key, 'ILIKE', "%$filterValue%");
-                        }
+                        $indexQuery = $indexQuery->whereRaw("unaccent(".$key.") ilike unaccent('%".$filterValue."%')");
                     }
                 }
             }
@@ -123,19 +118,10 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    
-                    if (self::$searchType == 'regex') {
-                        $indexQuery = $indexQuery->orWhere($column, '~*', "\m$filterValue");
-                    } else {
-                        $indexQuery = $indexQuery->orWhere($column, 'ILIKE', "%$filterValue%");
-                    }
+                    $indexQuery = $indexQuery->orWhereRaw("unaccent(".$column.") ilike unaccent('%".$filterValue."%')");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        if (self::$searchType == 'regex') {
-                            $q->where($column, '~*', "\m$filterValue");
-                        } else {
-                            $q->where($column, 'ILIKE', "%$filterValue%");
-                        }
+                        $q->whereRaw("unaccent(".$column.") ilike unaccent('%".$filterValue."%')");
                     });
                 }
             }
@@ -195,20 +181,5 @@ class DataTableService {
         }
 
         return $indexQuery;
-    }
-
-    static public function specialCharChanger($string) {
-        if (self::$searchType == 'regex') {
-            $string = str_replace(['á','â','à','å','ä','a'], '(á|â|à|å|ä|a)', $string);
-            $string = str_replace(['é','ê','è','ë','e'], '(é|ê|è|ë|e)', $string);
-            $string = str_replace(['í','î','ì','ï','i'], '(í|î|ì|ï|i)', $string);
-            $string = str_replace(['ó','ô','ò','ø','õ','ö','o'], '(ó|ô|ò|ø|õ|ö|o)', $string);
-            $string = str_replace(['ú','û','ù','ü','u'], '(ú|û|ù|ü|u)', $string);
-            $string = str_replace(['ð','æ','ç','ß'], '_', $string);
-        } else {
-            $string = str_replace(['á','â','à','å','ä','ð','é','ê','è','ë','í','î','ì','ï','ó','ô','ò','ø','õ','ö','ú','û','ù','ü','æ','ç','ß','o','a','i'], '_', $string);
-        }
-
-        return $string;
     }
 }
