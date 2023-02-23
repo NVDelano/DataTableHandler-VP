@@ -138,7 +138,7 @@ class DataTableService {
     static public function setupSelect($indexQuery, $selectArray, $withColumns, $relation = null) {
         // Splits the with relations and adds these to the $withColumns so we can select for each relation
         foreach ($withColumns as $withColumn) {
-            if(!is_array($withColumn)){
+            if(!is_string($withColumn)){
                 continue;
             }
             $explodedColumns = explode('.', $withColumn);
