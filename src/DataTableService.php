@@ -136,9 +136,28 @@ class DataTableService {
     }
 
     static public function setupSelect($indexQuery, $selectArray, $withColumns, $relation = null) {
+        // Splits the with relations and adds these to the $withColumns so we can select for each relation
+        foreach ($withColumns as $withColumn) {
+            $explodedColumns = explode('.', $withColumn);
+            $previousColumns = '';
+            foreach ($explodedColumns > 1 ? $explodedColumns : [] as $eindex => $explodedColumn) {
+                if (!isset($explodedColumns[$eindex+1])) {
+                    break;
+                } else {
+                    array_push($withColumns, $previousColumns . $explodedColumn);
+                    $previousColumns .= "{$explodedColumn}.";
+                }
+            }
+        }
+
         $relationArray = [];
         if($relation != null){
-            $relationArray[$relation] = [];
+            $keyParts = explode('.', $relation);
+            $previousKeyPart = '';
+            foreach ($keyParts as $keypart) {
+                $relationArray[$previousKeyPart . $keypart] = [];
+                $previousKeyPart .= $keypart . '.';
+            }
         }
 
         foreach ($selectArray as $key => $select) {
@@ -158,16 +177,15 @@ class DataTableService {
             
                 continue;
             }
-
             // If relation string exists
             if($relation != null){
                 // If with is not allowed - skip
                 if(!in_array($relation, $withColumns)){
                     continue;
                 }
-
                 // Fill the array for with's - select should be done in one with
                 $relationArray[$relation][] = $select;
+
             } else {
                 // Add normal select
                 $indexQuery = $indexQuery->addSelect(self::$baseTable . '.' . $select);
