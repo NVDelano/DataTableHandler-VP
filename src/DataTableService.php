@@ -35,6 +35,15 @@ class DataTableService {
                 }
             }
         }
+        
+        if (isset($lazyEvent->filterdata) && $lazyEvent->filterdata) {
+            foreach ($lazyEvent->filterdata as $filterdata) {
+                if(strpos( $filterdata->field, '.' ) !== false ) {
+                    continue; // TODO support relations
+                }
+                $indexQuery = $indexQuery->whereIn($filterdata->field, $filterdata->value);
+            }
+        }
 
         // With
         if ($withColumns && !empty($withColumns)) {
