@@ -41,7 +41,11 @@ class DataTableService {
                 if(strpos( $filterData->field, '.' ) !== false ) {
                     continue; // TODO support relations
                 }
-                $indexQuery = $indexQuery->whereIn($filterData->field, $filterData->value);
+                if (is_array($filterData->value)) {
+                    $indexQuery = $indexQuery->whereIn($filterData->field, $filterData->value);
+                } else {
+                    $indexQuery = $indexQuery->where($filterData->field, $filterData->value);
+                }
             }
         }
 
