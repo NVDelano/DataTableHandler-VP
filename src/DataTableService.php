@@ -9,7 +9,7 @@ class DataTableService {
     static $baseTable;
     static $additionalSelect;
     static $searchType;
-    static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated, $officeCheck = false)
+    static public function process($lazyQuery, $indexQuery, $withColumns, $returnPaginated, $officeCheck = false, $withCounts = [])
     {
         // Setup
         $lazyEvent = null;
@@ -24,13 +24,13 @@ class DataTableService {
         if (isset($lazyEvent->filters) && $lazyEvent->filters) {
             foreach ($lazyEvent->filters as $key => $filter) {
                 if ($filter->value) {
-                    $filterValue = $filter->value;
+                    $filterValue = htmlspecialchars($filter->value);
                     if ($key == "global") {
                         $indexQuery = $indexQuery->where(function($query) use ($columns, $filterValue){
                             $indexQuery = self::setupWhere($query, $columns, $filterValue);
                         });
                     } else {
-                        $indexQuery = $indexQuery->whereRaw("unaccent(cast(".$key." as varchar)) ilike unaccent('%".$filterValue."%')");
+                        $indexQuery = $indexQuery->whereRaw($key." like '%".$filterValue."%'");
                     }
                 }
             }
@@ -39,12 +39,15 @@ class DataTableService {
         if (isset($lazyEvent->filterData) && $lazyEvent->filterData) {
             foreach ($lazyEvent->filterData as $filterData) {
                 if(strpos( $filterData->field, '.' ) !== false ) {
-                    continue; // TODO support relations
+                    $breakIndex = strrpos($filterData->field, '.');
+                    $from = substr($filterData->field, 0, $breakIndex);
+                    $field = substr($filterData->field, $breakIndex + 1);
+                    $indexQuery = $indexQuery->whereHas($from, function($q) use ($field, $filterData){
+                        self::setupFilters($q, $field, $filterData->value);
+                    });
                 }
-                if (is_array($filterData->value)) {
-                    $indexQuery = $indexQuery->whereIn($filterData->field, $filterData->value);
-                } else {
-                    $indexQuery = $indexQuery->where($filterData->field, $filterData->value);
+                else{
+                    $indexQuery = self::setupFilters($indexQuery, $filterData->field, $filterData->value);
                 }
             }
         }
@@ -136,13 +139,29 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->orWhereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
+                    $indexQuery = $indexQuery->orWhereRaw($column." like '%".$filterValue."%'");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
-                        $q->whereRaw("unaccent(cast(".$column." as varchar)) ilike unaccent('%".$filterValue."%')");
+                        $q->whereRaw($column." like '%".$filterValue."%'");
                     });
                 }
             }
+        }
+
+        return $indexQuery;
+    }
+
+    static public function setupFilters($indexQuery, $field, $value) {
+        if (is_array($value)) {
+            $indexQuery = $indexQuery->whereIn($field, $value);
+        } else if ($value === "NULL") {
+            $indexQuery = $indexQuery->whereNull($field);
+        } else if ($value === "NOT NULL") {
+            $indexQuery = $indexQuery->whereNotNull($field);
+        } else if (is_string($value) && substr($value, 0, 4) === "NOT!") {
+            $indexQuery = $indexQuery->where($field, "!=", substr($value, 4));
+        }  else {
+            $indexQuery = $indexQuery->where($field, $value);
         }
 
         return $indexQuery;
