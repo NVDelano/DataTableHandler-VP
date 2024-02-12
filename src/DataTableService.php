@@ -160,10 +160,12 @@ class DataTableService {
             $indexQuery = $indexQuery->whereNotNull($field);
         } else if (is_string($value) && substr($value, 0, 4) === "NOT!") {
             $indexQuery = $indexQuery->where($field, "!=", substr($value, 4));
-        }  else {
+        } else if (is_string($value) && substr($value, 0, 5) === "LIKE!") {
+            $indexQuery = $indexQuery->where($field, "like", "%".substr($value, 5)."%");
+        } else {
             $indexQuery = $indexQuery->where($field, $value);
         }
-
+ 
         return $indexQuery;
     }
 
