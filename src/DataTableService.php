@@ -16,6 +16,9 @@ class DataTableService {
         if ($lazyQuery) {
             $lazyEvent = json_decode(urldecode($lazyQuery));
         }
+
+        self::$baseTable = $indexQuery->getModel()->getTable();
+
         // Filtering
         $columns = isset($indexQuery->filters) ? $indexQuery->filters : [];
         if ($officeCheck) {
@@ -47,7 +50,7 @@ class DataTableService {
                     });
                 }
                 else{
-                    $indexQuery = self::setupFilters($indexQuery, $filterData->field, $filterData->value, $indexQuery->getTable());
+                    $indexQuery = self::setupFilters($indexQuery, $filterData->field, $filterData->value, self::$baseTable);
                 }
             }
         }
@@ -56,8 +59,6 @@ class DataTableService {
         if ($withColumns && !empty($withColumns)) {
             $indexQuery = $indexQuery->with($withColumns);
         }
-
-        self::$baseTable = $indexQuery->getModel()->getTable();
         
         // Select specific fields
         $selectingFields = false;
