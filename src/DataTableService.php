@@ -125,7 +125,7 @@ class DataTableService {
                 $indexQuery = $indexQuery->orderBy($previousRelation.'.'.$filterColumn, $sortOrder);
             } else {
                 // normal filter
-                $indexQuery = $indexQuery->orderBy($sortField, $sortOrder);
+                $indexQuery = $indexQuery->orderByRaw(self::$baseTable . '.' . $sortField . ' ' . $sortOrder);
             }
         }
 
@@ -140,7 +140,7 @@ class DataTableService {
                     continue;
                 }
                 if ($relationName === []) {
-                    $indexQuery = $indexQuery->orWhereRaw($column." like '%".$filterValue."%'");
+                    $indexQuery = $indexQuery->orWhereRaw(self::$baseTable . '.' . $column." like '%".$filterValue."%'");
                 } else {
                     $indexQuery = $indexQuery->orWhereHas(implode('.', $relationName), function ($q) use ($column, $filterValue) {
                         $q->whereRaw($column." like '%".$filterValue."%'");
