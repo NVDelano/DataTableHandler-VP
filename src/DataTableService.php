@@ -47,7 +47,7 @@ class DataTableService {
                     });
                 }
                 else{
-                    $indexQuery = self::setupFilters($indexQuery, $filterData->field, $filterData->value);
+                    $indexQuery = self::setupFilters($indexQuery, $filterData->field, $filterData->value, $indexQuery->getTable());
                 }
             }
         }
@@ -151,7 +151,7 @@ class DataTableService {
         return $indexQuery;
     }
 
-    static public function setupFilters($indexQuery, $field, $value) {
+    static public function setupFilters($indexQuery, $field, $value, $table = null) {
         if (is_array($value)) {
             $indexQuery = $indexQuery->whereIn($field, $value);
         } else if ($value === "NULL") {
@@ -163,7 +163,8 @@ class DataTableService {
         } else if (is_string($value) && substr($value, 0, 5) === "LIKE!") {
             $indexQuery = $indexQuery->where($field, "like", "%".substr($value, 5)."%");
         } else {
-            $indexQuery = $indexQuery->where($field, $value);
+            $completeFieldName = $table ? $table . '.' . $field : $field;
+            $indexQuery = $indexQuery->whereRaw($completeFieldName . ' = ' . $value);
         }
  
         return $indexQuery;
