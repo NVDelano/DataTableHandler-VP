@@ -108,9 +108,14 @@ class DataTableService {
                     }
                     $idName = explode('~', $relationName);
                     $relationName = $idName[0] ?? $relationName;
-                    $relationNamePlural = Str::of($relationName)->plural()->snake();
-                    if ($relationName === $relationNamePlural) {
-                        break; // can't filter on Many-to-Many
+                    $excludePluralArray = ['job_booking_voyage'];
+                    if (in_array($relationName, $excludePluralArray)) {
+                        $relationNamePlural = Str::of($relationName)->snake();
+                    } else {
+                        $relationNamePlural = Str::of($relationName)->plural()->snake();
+                        if ($relationName === $relationNamePlural) {
+                            break; // can't filter on Many-to-Many
+                        }
                     }
                     $idName = $idName[1] ?? $relationName;
                     $indexQuery = $indexQuery->leftJoin($relationNamePlural, $relationNamePlural.'.id', $previousRelation.'.'.$idName.'_id');
