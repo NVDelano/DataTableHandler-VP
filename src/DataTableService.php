@@ -160,6 +160,9 @@ class DataTableService {
     static public function setupFilters($indexQuery, $field, $value, $table = null) {
         if (is_array($value)) {
             $indexQuery = $indexQuery->whereIn($field, $value);
+        } else if ($table && ($value === "NULL" || $value === "NOT NULL")) {
+            $completeFieldName = $table ? $table . '.' . $field : $field;
+            $indexQuery = $indexQuery->whereRaw($completeFieldName . ' IS ' . $value);
         } else if ($value === "NULL") {
             $indexQuery = $indexQuery->whereNull($field);
         } else if ($value === "NOT NULL") {
